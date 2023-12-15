@@ -2,4 +2,4 @@
 User-agent:*
 Disallow:
 
-Sitemap: https://doc.bookandmusic.cn/sitemap.xml
+Sitemap: https://bookandmusic.cn/sitemap.xml

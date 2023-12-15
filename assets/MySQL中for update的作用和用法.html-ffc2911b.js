@@ -1,0 +1,50 @@
+import{_ as e}from"./plugin-vue_export-helper-c27b6911.js";import{r as o,o as p,c as l,a as s,b as n,e as r,d as t}from"./app-45b6ee47.js";const d={},c=s("h1",{id:"mysql中for-update的作用和用法",tabindex:"-1"},[s("a",{class:"header-anchor",href:"#mysql中for-update的作用和用法","aria-hidden":"true"},"#"),n(" MySQL中for update的作用和用法")],-1),i={href:"https://mp.csdn.net/editor/html/115522252",target:"_blank",rel:"noopener noreferrer"},k=t(`<h2 id="一、for-update定义" tabindex="-1"><a class="header-anchor" href="#一、for-update定义" aria-hidden="true">#</a> 一、for update定义</h2><p><code>for update</code>是一种<code>行级锁</code>，又叫<code>排它锁</code>。</p><p>一旦用户对某个行施加了行级加锁，则该用户可以查询也可以更新被加锁的数据行，其它用户只能查询但不能更新被加锁的数据行。</p><p>如果其它用户想更新该表中的数据行，则也必须对该表施加行级锁．即使多个用户对一个表均使用了共享更新，但也不允许两个事务同时对一个表进行更新，真正对表进行更新时，是以独占方式锁表，一直到提交或复原该事务为止。</p><p>行锁永远是独占方式锁。</p><p><strong>只有当出现如下之一的条件，才会释放共享更新锁：</strong></p><ol><li>执行提交（COMMIT）语句</li><li>退出数据库（LOG　OFF）</li><li>程序停止运行</li></ol><h2 id="二、概念和用法" tabindex="-1"><a class="header-anchor" href="#二、概念和用法" aria-hidden="true">#</a> 二、概念和用法</h2><p>通常情况下，select语句是不会对数据加锁，妨碍影响其他的DML和DDL操作。同时，在多版本一致读机制的支持下，select语句也不会被其他类型语句所阻碍。</p><p>而select … for update 语句是我们经常使用手工加锁语句。在数据库中执行select … for update ,大家会发现会对数据库中的表或某些行数据进行锁表，在mysql中，如果查询条件带有主键，会锁行数据，如果没有，会锁表。</p><p>由于InnoDB预设是Row-Level Lock，所以只有「明确」的指定主键，MySQL才会执行Row lock (只锁住被选取的资料例) ，否则MySQL将会执行Table Lock (将整个资料表单给锁住)。</p><p>举个例子: 假设有张表user ，里面有 id 和 name 两列，id是主键。</p><p>例1: (明确指定主键，并且数据真实存在，row lock)</p><div class="language-sql line-numbers-mode" data-ext="sql"><pre class="language-sql"><code>
+
+<span class="token number">1.</span>  <span class="token comment">-- 开启事务</span>
+  
+<span class="token number">2.</span>  <span class="token keyword">begin</span><span class="token punctuation">;</span>
+  
+<span class="token number">3.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> id<span class="token operator">=</span><span class="token number">3</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+  
+<span class="token number">4.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> id<span class="token operator">=</span><span class="token number">3</span> <span class="token operator">and</span> name<span class="token operator">=</span><span class="token string">&#39;Tom&#39;</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+  
+<span class="token number">5.</span>  <span class="token comment">-- 提交事务</span>
+  
+<span class="token number">6.</span>  <span class="token keyword">commit</span><span class="token punctuation">;</span>
+  
+
+
+</code></pre><div class="line-numbers" aria-hidden="true"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><p>例2: (明确指定主键，但数据不存在，无lock)</p><div class="language-sql line-numbers-mode" data-ext="sql"><pre class="language-sql"><code>
+
+<span class="token number">1.</span>  <span class="token keyword">begin</span><span class="token punctuation">;</span>
+  
+<span class="token number">2.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> id<span class="token operator">=</span><span class="token number">0</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+  
+<span class="token number">3.</span>  <span class="token keyword">commit</span><span class="token punctuation">;</span>
+  
+
+
+</code></pre><div class="line-numbers" aria-hidden="true"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><blockquote><p><strong>注意：</strong></p><p>上面的说法有误，InnoDB RR级别的锁算法是next-key lock</p><p>普通索引无论是否命中都是next-key lock + gap lock</p><p>唯一索引并命中则降级为record lock，查不到还是next-key lock + gap lock，所以这里是有锁的，锁定的是一个主键范围，并不是无锁，可以另外开启一个事务，执行下面的脚本，就会发现当上面的事务没有提交时，下面的sql第二句是执行不了的。</p><div class="language-sql line-numbers-mode" data-ext="sql"><pre class="language-sql"><code>
+<span class="token number">1.</span>  <span class="token keyword">begin</span><span class="token punctuation">;</span>
+
+<span class="token number">2.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+
+<span class="token number">3.</span>  <span class="token keyword">commit</span><span class="token punctuation">;</span>
+
+</code></pre><div class="line-numbers" aria-hidden="true"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div></blockquote><p>例3: (主键不明确，table lock)</p><div class="language-sql line-numbers-mode" data-ext="sql"><pre class="language-sql"><code>
+<span class="token number">1.</span>  <span class="token keyword">begin</span><span class="token punctuation">;</span>
+  
+<span class="token number">2.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> id<span class="token operator">&lt;&gt;</span><span class="token number">3</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+  
+<span class="token number">3.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> id <span class="token operator">LIKE</span> <span class="token string">&#39;%3%&#39;</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+  
+<span class="token number">4.</span>  <span class="token keyword">commit</span><span class="token punctuation">;</span>
+  
+</code></pre><div class="line-numbers" aria-hidden="true"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><p>例4: (无主键，table lock)</p><div class="language-sql line-numbers-mode" data-ext="sql"><pre class="language-sql"><code>
+<span class="token number">1.</span>  <span class="token keyword">begin</span><span class="token punctuation">;</span>
+  
+<span class="token number">2.</span>  <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token keyword">user</span> <span class="token keyword">WHERE</span> name<span class="token operator">=</span><span class="token string">&#39;Tom&#39;</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+  
+<span class="token number">3.</span>  <span class="token keyword">commit</span><span class="token punctuation">;</span>
+
+</code></pre><div class="line-numbers" aria-hidden="true"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><p><strong>注意：</strong></p><ol><li>FOR UPDATE仅适用于<code>InnoDB</code>，且必须在<code>事务处理模块(BEGIN/COMMIT)</code>中才能生效。</li><li>要测试锁定的状况，可以利用MySQL的Command Mode(命令模式) ，开两个视窗来做测试。</li><li>Myisam 只支持表级锁，InnerDB支持行级锁 添加了(行级锁/表级锁)锁的数据不能被其它事务再锁定，也不被其它事务修改。是表级锁时，不管是否查询到记录，都会锁定表。</li></ol><h2 id="三、什么时候需要使用for-update" tabindex="-1"><a class="header-anchor" href="#三、什么时候需要使用for-update" aria-hidden="true">#</a> 三、什么时候需要使用for update？</h2><p>借助for update语句，我们可以在应用程序的层面手工实现数据加锁保护操作。就是那些需要业务层面数据独占时，可以考虑使用for update。</p><p>场景上，比如火车票订票，在屏幕上显示有票，而真正进行出票时，需要重新确定一下这个数据没有被其他客户端修改。所以，在这个确认过程中，可以使用for update。</p><h2 id="四、for-update悲观锁" tabindex="-1"><a class="header-anchor" href="#四、for-update悲观锁" aria-hidden="true">#</a> 四、for update悲观锁</h2><p><strong>悲观锁</strong>：总是假设最坏的情况，每次去拿数据的时候都认为别人会修改，所以每次在拿数据的时候都会上锁，这样别人想拿这个数据就会阻塞直到它解锁。传统的关系型数据库里边就用到了很多这种锁机制，比如行锁，表锁等，读锁，写锁等，都是在做操作之前先上锁。就像for update，再比如Java里面的同步原语synchronized关键字的实现也是悲观锁。</p><p><strong>乐观锁</strong>：顾名思义，就是很乐观，每次去拿数据的时候都认为别人不会修改，所以不会上锁，但是在更新的时候会判断一下在此期间别人有没有去更新这个数据，可以使用版本号等机制。乐观锁适用于多读的应用类型，这样可以提高吞吐量，像数据库提供的类似于write_condition机制，其实都是提供的乐观锁。</p>`,29);function u(m,v){const a=o("ExternalLinkIcon");return p(),l("div",null,[c,s("p",null,[n("转载自:"),s("a",i,[n("https://mp.csdn.net/editor/html/115522252"),r(a)])]),k])}const w=e(d,[["render",u],["__file","MySQL中for update的作用和用法.html.vue"]]);export{w as default};
